@@ -36,7 +36,7 @@ void p(unsigned char* data, int width, int height) {
 int main() {
 
     // get image path
-    path image_path = std::filesystem::current_path().parent_path() / "test_pics" / "test_pic_2.jpg";
+    path image_path = std::filesystem::current_path().parent_path() / "test_pics" / "test_pic_3.jpg";
 
     // load image into Matrix
     Image image;
@@ -46,30 +46,34 @@ int main() {
     // check if image loaded successfully
     if (image.data == NULL) 
     {
-        cout << "ERROR: " << stbi_failure_reason() << "\n";
-    }
+        throw(stbi_failure_reason());
+    }    
 
-    // create filter kernel, size = 5
-    float k[] = {.04,.04,.04,.04,.04,
-                 .04,.04,.04,.04,.04,
-                 .04,.04,.04,.04,.04,
-                 .04,.04,.04,.04,.04,
-                 .04,.04,.04,.04,.04};
-
-    unsigned char* pls = conv(image.data, image.width, image.height, k, 5);
-    stbi_write_jpg("CONV.jpg", image.width, image.height, 1, pls, image.width);
+    unsigned char* blur = box_blur(image.data, image.width, image.height, 11);
+    stbi_write_jpg("BLUR.jpg", image.width, image.height, 1, blur, image.width);
 
     // free memory
     stbi_image_free(image.data);
 
 
+    
+    //
+    // TESTING
+    //
 
-    // // test code run time (ns)
-    // auto start = std::chrono::steady_clock::now();
+    // // create filter kernel, size = 5
+    // float k[] = {.04,.04,.04,.04,.04,
+    //              .04,.04,.04,.04,.04,
+    //              .04,.04,.04,.04,.04,
+    //              .04,.04,.04,.04,.04,
+    //              .04,.04,.04,.04,.04};
 
-    // //code
+    // float tk[] = {.11,.11,.11,
+    //               .11,.11,.11,
+    //               .11,.11,.11};
 
-    // auto end = std::chrono::steady_clock::now();
-    // cout << "\n" << (end - start).count() << endl;
+    // unsigned char t[] = {100,100,100,100,
+    //                      100,100,100,100,
+    //                      100,100,100,100};
 
 }

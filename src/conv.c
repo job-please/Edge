@@ -1,38 +1,41 @@
 #include "..\include\conv.h"
 
 
-// ASSUMES EVEN PADDING DESIRED ON ALL SIDES
+
+// ASSUME EVEN PADDING DESIRED ON ALL SIDES
 unsigned char* pad(unsigned char* data, int width, int height, int pad, unsigned char value)
 {
     // get padded image width , height
     int pad_width = width + pad * 2;
     int pad_height = height + pad * 2;
 
-    // allocate memory to store padded image data
+    // allocate memory to store result
     unsigned char* pad_data = (unsigned char*)malloc(pad_width * pad_height);
     if (pad_data == NULL)
     {
-        throw("malloc() failed");
+        throw("Memory allocation failed!");
     }
 
     // set values of pad_data
-    int pad_block_size = pad_width * pad; // size of top and bottom padding blocks
-    memset(pad_data, value, pad_block_size); // first pad rows
-    unsigned char* pad_row_start = pad_data + pad_block_size; // pointer to start of each row of padded data
-    for (int i = 0; i < height; i++) // assign each row of pad_data
+    int pad_block_size = pad_width * pad;
+    memset(pad_data, value, pad_block_size);
+    unsigned char* pad_row_start = pad_data + pad_block_size;
+    for (int i = 0; i < height; i++)
     {
         memset(pad_row_start, value, pad); 
         memcpy((pad_row_start + pad), data, width);
         memset((pad_row_start + pad + width), value, pad);
-        // increment pointers to next row
+
         pad_row_start += pad_width;
         data += width;
     }
-    memset(pad_row_start, value, pad_block_size); // last pad rows
+    memset(pad_row_start, value, pad_block_size);
 
     // return padded image
     return pad_data;
 }
+
+
 
 // ASSUMES SQUARE KERNEL
 // Potentially slow for large kernel
@@ -48,7 +51,7 @@ unsigned char* conv(unsigned char* data, int width, int height, float* k_data, i
     unsigned char* conv_data = (unsigned char*)calloc(size, 1);
     if (conv_data == NULL)
     {
-        throw("malloc() failed");
+        throw("Memory allocation failed!");
     }
 
     // perform convolution
@@ -65,6 +68,151 @@ unsigned char* conv(unsigned char* data, int width, int height, float* k_data, i
             pad_idx += k_size - 1;
         }
         pad_idx++;
+    }
+
+    return conv_data;
+}
+
+
+
+unsigned char* box_blur(unsigned char* data, int width, int height, int radius)
+{
+    // create 1-D kernel (row, col filters have same values for box blur)
+    float* one_d_kernel = (float*)malloc(radius * sizeof(float));
+    if (one_d_kernel == NULL)
+    {
+        throw("Memory allocation failed!");
+    }
+    float val = 1.0 / radius;
+    for (int i=0; i < radius; i++)
+    {
+        *(one_d_kernel + i) = val;
+    }
+
+    // apply blur
+    unsigned char* row_conv = one_d_row_conv(data, width, height, one_d_kernel, radius);
+    unsigned char* blur_data = one_d_col_conv(row_conv, width, height, one_d_kernel, radius);
+    free(row_conv);
+
+    return blur_data;
+}
+
+
+
+//
+// HELPERS
+//
+
+unsigned char* pad_hor(unsigned char* data, int width, int height, int pad, unsigned char value)
+{
+    // get padded image width
+    int pad_width = width + pad * 2;
+
+    // allocate memory to store result
+    unsigned char* pad_data = (unsigned char*)malloc(pad_width * height);
+    if (pad_data == NULL)
+    {
+        throw("Memory allocation failed!");
+    }
+
+    // set values of pad_data
+    unsigned char* row = pad_data;
+    for (int i = 0; i < height; i++)
+    {
+        memset(row, value, pad); 
+        memcpy((row + pad), data, width);
+        memset((row + pad + width), value, pad);
+        
+        row += pad_width;
+        data += width;
+    }
+
+    // return padded image
+    return pad_data;
+}
+
+
+
+unsigned char* pad_ver(unsigned char* data, int width, int height, int pad, unsigned char value)
+{
+    // math
+    int size = width * height;
+    int pad_block_size = width * pad;
+
+    // allocate memory to store result
+    unsigned char* pad_data = (unsigned char*)malloc(size + 2*pad_block_size);
+    if (pad_data == NULL)
+    {
+        throw("Memory allocation failed!");
+    }
+
+    // set values of pad_data
+    memset(pad_data, value, pad_block_size);
+    memcpy((pad_data + pad_block_size), data, size);
+    memset((pad_data + pad_block_size + size), value, pad_block_size);
+
+    // return padded image
+    return pad_data;
+}
+
+
+
+unsigned char* one_d_row_conv(unsigned char* data, int width, int height, float* k_data, int k_len)
+{
+    // handle edges by padding with zeros
+    unsigned char* pad_data = pad_hor(data, width, height, k_len / 2, 0);
+    int pad_width = width + k_len - 1;
+    int size = width * height;
+
+    // allocate memory to store result
+    unsigned char* conv_data = (unsigned char*)calloc(size, 1);
+    if (conv_data == NULL)
+    {
+        throw("Memory allocation failed!");
+    }
+
+    // perform convolution
+    int pad_idx = 0;
+    for (int i=0; i < size; i++)
+    {
+        for (int j = 0; j < k_len; j++)
+        {
+            *(conv_data + i) += *(k_data + j) * (*(pad_data + pad_idx + j));
+        }
+
+        if ((i + 1) % width == 0)
+        {
+            pad_idx += k_len - 1;
+        }
+        pad_idx++;
+    }
+
+    return conv_data;
+}
+
+
+
+unsigned char* one_d_col_conv(unsigned char* data, int width, int height, float* k_data, int k_len)
+{
+    // handle edges by padding with zeros
+    unsigned char* pad_data = pad_ver(data, width, height, k_len / 2, 0);
+    int pad_height = height + k_len - 1;
+    int size = width * height;
+
+    // allocate memory to store result
+    unsigned char* conv_data = (unsigned char*)calloc(size, 1);
+    if (conv_data == NULL)
+    {
+        throw("Memory allocation failed!");
+    }
+
+    // perform convolution
+    for (int i=0; i < size; i++)
+    {
+        for (int j = 0; j < k_len; j++)
+        {
+            *(conv_data + i) += *(k_data + j) * (*(pad_data + i + j*width));
+        }
     }
 
     return conv_data;
