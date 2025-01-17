@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <filesystem>
+#include <math.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "..\include\stb_image.h"
@@ -20,7 +21,6 @@ typedef Matrix<unsigned char> Image;
 
 // namespaces
 using std::cout;
-using std::endl;
 using std::filesystem::path;
 
 void p(unsigned char* data, int width, int height) {
@@ -36,7 +36,7 @@ void p(unsigned char* data, int width, int height) {
 int main() {
 
     // get image path
-    path image_path = std::filesystem::current_path().parent_path() / "test_pics" / "test_pic_3.jpg";
+    path image_path = std::filesystem::current_path().parent_path() / "test_pics" / "test_pic_2.jpg";
 
     // load image into Matrix
     Image image;
@@ -49,8 +49,9 @@ int main() {
         throw(stbi_failure_reason());
     }    
 
-    unsigned char* blur = box_blur(image.data, image.width, image.height, 11);
-    stbi_write_jpg("BLUR.jpg", image.width, image.height, 1, blur, image.width);
+    unsigned char* g = gauss_blur(image.data, image.width, image.height, 31, 1.0);
+    stbi_write_jpg("BUH.jpg", image.width, image.height, 1, g, 0);
+    stbi_write_jpg("OG.jpg", image.width, image.height, 1, image.data, 0);
 
     // free memory
     stbi_image_free(image.data);

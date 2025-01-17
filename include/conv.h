@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <string.h>
-
 // ASSUME ALL INPUT DATA IS STORED IN ROW MAJOR ORDER
 // ASSUME 1-CHANNEL INPUT DATA
 
@@ -16,6 +13,9 @@ unsigned char* conv(unsigned char* data, int width, int height, float* k_data, i
 
 // box blur
 unsigned char* box_blur(unsigned char* data, int width, int height, int radius);
+
+// gaussian blur
+unsigned char* gauss_blur(unsigned char* data, int width, int height, int radius, float sigma);
 
 // 
 // 

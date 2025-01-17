@@ -1,5 +1,8 @@
-#include "..\include\conv.h"
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
 
+#include "..\include\conv.h"
 
 
 // ASSUME EVEN PADDING DESIRED ON ALL SIDES
@@ -75,6 +78,7 @@ unsigned char* conv(unsigned char* data, int width, int height, float* k_data, i
 
 
 
+// THIS COULD BE IMPLEMENTED MUCH BETTER (don't need kernel, all values are same)
 unsigned char* box_blur(unsigned char* data, int width, int height, int radius)
 {
     // create 1-D kernel (row, col filters have same values for box blur)
@@ -88,6 +92,46 @@ unsigned char* box_blur(unsigned char* data, int width, int height, int radius)
     {
         *(one_d_kernel + i) = val;
     }
+
+    // apply blur
+    unsigned char* row_conv = one_d_row_conv(data, width, height, one_d_kernel, radius);
+    unsigned char* blur_data = one_d_col_conv(row_conv, width, height, one_d_kernel, radius);
+    free(row_conv);
+
+    return blur_data;
+}
+
+
+
+// THIS COULD BE IMPLEMENTED BETTER (Normalize as you convolve so you don't have to run through the kernel an extra time)
+unsigned char* gauss_blur(unsigned char* data, int width, int height, int radius, float sigma)
+{
+    float* one_d_kernel = (float*)malloc(radius * sizeof(float));
+    if (one_d_kernel == NULL)
+    {
+        throw("Memory allocation failed!");
+    }
+    int len;
+    int k_i = len = radius/2;
+    float sum = 0;
+    float k_val;
+    for (int i = 0; i < len; i++)
+    {
+        k_val = (.39894 * exp(-(k_i*k_i)/(2 * sigma * sigma)) / sigma);
+        k_i--;
+        *(one_d_kernel + i) = k_val;
+        *(one_d_kernel + radius - 1 - i) = k_val;
+        sum += 2*k_val;
+    }
+    *(one_d_kernel + len) = .39894 * sigma;
+    sum += *(one_d_kernel + len);
+
+    // normalize
+    for (int i=0; i < radius; i++)
+    {
+        *(one_d_kernel + i) /= sum;
+    }
+
 
     // apply blur
     unsigned char* row_conv = one_d_row_conv(data, width, height, one_d_kernel, radius);
