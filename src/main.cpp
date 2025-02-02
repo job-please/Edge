@@ -9,7 +9,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "..\include\stb_image_write.h"
 
-#include "..\include\conv.h"
+#include "..\include\page.h"
 
 template<typename T> struct Matrix {
     T* data;
@@ -36,7 +36,7 @@ void p(unsigned char* data, int width, int height) {
 int main() {
 
     // get image path
-    path image_path = std::filesystem::current_path().parent_path() / "test_pics" / "test_pic_2.jpg";
+    path image_path = std::filesystem::current_path().parent_path() / "test_pics" / "test_pic_4.jpg";
 
     // load image into Matrix
     Image image;
@@ -49,9 +49,14 @@ int main() {
         throw(stbi_failure_reason());
     }    
 
-    unsigned char* g = gauss_blur(image.data, image.width, image.height, 31, 1.0);
-    stbi_write_jpg("BUH.jpg", image.width, image.height, 1, g, 0);
-    stbi_write_jpg("OG.jpg", image.width, image.height, 1, image.data, 0);
+    // stbi_write_jpg("BLUR.jpg", image.width, image.height, 1, g, 0);
+
+    unsigned char* sobel_raw = sobel(image.data, image.width, image.height);
+    unsigned char* sobel_cool = box_blur(image.data, image.width, image.height, 7);
+
+    stbi_write_jpg("RAW.jpg", image.width, image.height, 1, image.data, 0);
+    stbi_write_jpg("COOL.jpg", image.width, image.height, 1, sobel_cool, 0);
+
 
     // free memory
     stbi_image_free(image.data);
@@ -78,3 +83,7 @@ int main() {
     //                      100,100,100,100};
 
 }
+
+// NOTES
+
+// Lossy conversions from float to uint8 cause banding, BAD!!!
