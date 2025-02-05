@@ -49,38 +49,13 @@ int main() {
         throw(stbi_failure_reason());
     }    
 
-    // stbi_write_jpg("BLUR.jpg", image.width, image.height, 1, g, 0);
-
-    unsigned char* sobel_raw = sobel(image.data, image.width, image.height);
-    unsigned char* sobel_cool = box_blur(image.data, image.width, image.height, 7);
-
-    stbi_write_jpg("RAW.jpg", image.width, image.height, 1, image.data, 0);
-    stbi_write_jpg("COOL.jpg", image.width, image.height, 1, sobel_cool, 0);
+    unsigned char* cool = EDGE(image.data, image.width, image.height);
+    stbi_write_jpg("COOL.jpg", image.width, image.height, 1, cool, 0);
 
 
     // free memory
+    free(cool);
     stbi_image_free(image.data);
-
-
-    
-    //
-    // TESTING
-    //
-
-    // // create filter kernel, size = 5
-    // float k[] = {.04,.04,.04,.04,.04,
-    //              .04,.04,.04,.04,.04,
-    //              .04,.04,.04,.04,.04,
-    //              .04,.04,.04,.04,.04,
-    //              .04,.04,.04,.04,.04};
-
-    // float tk[] = {.11,.11,.11,
-    //               .11,.11,.11,
-    //               .11,.11,.11};
-
-    // unsigned char t[] = {100,100,100,100,
-    //                      100,100,100,100,
-    //                      100,100,100,100};
 
 }
 

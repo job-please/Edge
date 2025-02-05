@@ -327,42 +327,42 @@ unsigned char* threshold(unsigned char* data, int size, int low, int high)
 
 
 
-unsigned char* hysterisis(unsigned char* data, int size, int width, int weak, int strong)
-{
-    unsigned char* hys_data = (unsigned char*)malloc(size);
-    if (hys_data == NULL)
-    {
-        throw("Memory allocation failed!");
-    }
-    for (int i=width; i < size-width; i++)
-    {
-        if (*(data + i) == weak)
-        {
-            if (*(data + i - width - 1) == strong ||
-                *(data + i - width) == strong ||
-                *(data + i - width + 1) == strong ||
-                *(data + i - 1) == strong ||
-                *(data + i + 1) == strong ||
-                *(data + i + width - 1) == strong ||
-                *(data + i + width) == strong ||
-                *(data + i + width + 1) == strong)
-            {
-                *(hys_data + i) = 255;
-            }
-            else
-            {
-                *(hys_data + i) = 0;
-            }
+// unsigned char* hysterisis(unsigned char* data, int size, int width, int weak, int strong)
+// {
+//     unsigned char* hys_data = (unsigned char*)malloc(size);
+//     if (hys_data == NULL)
+//     {
+//         throw("Memory allocation failed!");
+//     }
+//     for (int i=width; i < size-width; i++)
+//     {
+//         if (*(data + i) == weak)
+//         {
+//             if (*(data + i - width - 1) == strong ||
+//                 *(data + i - width) == strong ||
+//                 *(data + i - width + 1) == strong ||
+//                 *(data + i - 1) == strong ||
+//                 *(data + i + 1) == strong ||
+//                 *(data + i + width - 1) == strong ||
+//                 *(data + i + width) == strong ||
+//                 *(data + i + width + 1) == strong)
+//             {
+//                 *(hys_data + i) = 255;
+//             }
+//             else
+//             {
+//                 *(hys_data + i) = 0;
+//             }
 
-            if (i % (width-1) == 0)
-            {
-                i += 2;
-            }
-        }
-    }
+//             if (i % (width-1) == 0)
+//             {
+//                 i += 2;
+//             }
+//         }
+//     }
 
-    return hys_data;
-}
+//     return hys_data;
+// }
 
 
 
@@ -370,20 +370,27 @@ unsigned char* EDGE(unsigned char* data, int width, int height)
 {
     int size = width * height;
 
+    // pre-process
+    // unsigned char* b1 = box_blur(data, width, height, 5);
+    // unsigned char* b2 = box_blur(b1, width, height, 5);
+    // unsigned char* b3 = box_blur(b2, width, height, 3);
+
     // sobel filter
     float* angle;
-    unsigned char* raw = sobel2(data, width, height, &angle);
+    unsigned char* sob = sobel2(data, width, height, &angle);
+    // free(b1);
+    // free(b2);
 
     // nonmax suppresion
-    unsigned char* sup = nonmax_sup(raw, angle, width, height);
-    free(raw);
+    unsigned char* sup = nonmax_sup(sob, angle, width, height);
+    free(sob);
 
     // double threshold
-    unsigned char* thresh = threshold(sup, size, (.1 * 255), (.2 * 255));
+    unsigned char* thresh = threshold(sup, size, (.1 * 255), (.3 * 255));
     free(sup);
 
     // hysterisis
-    unsigned char* hys = hysterisis(thresh, size, width, 50, 255);
+    // unsigned char* hys = hysterisis(thresh, size, width, 50, 255);
     // free(thresh);
 
     return thresh;
